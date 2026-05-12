@@ -232,35 +232,32 @@ function deleteProduct(id) {
 
 function syncWithFirebase() {
     const localProducts = localStorage.getItem('products');
-    const defaultProducts = products; // from products.js
+    const defaultProducts = products;
     
     db.ref('products').once('value').then((snapshot) => {
         let cloudProducts = snapshot.val() || [];
         if (!Array.isArray(cloudProducts)) cloudProducts = Object.values(cloudProducts);
         
-        let localData = [];
-        if (localProducts) localData = JSON.parse(localProducts);
-        
-        // Merge strategy: Add everything from local/default if ID doesn't exist in cloud
-        let mergedCount = 0;
+        const localData = localProducts ? JSON.parse(localProducts) : [];
         const sourceData = localData.length > 0 ? localData : defaultProducts;
 
-        sourceData.forEach(item => {
-            const exists = cloudProducts.find(p => p.id === item.id);
-            if (!exists) {
-                cloudProducts.push(item);
-                mergedCount++;
-            }
-        });
+        // Count how many are actually new
+        const newItems = sourceData.filter(item => !cloudProducts.find(p => p.id === item.id));
 
-        if (mergedCount === 0) {
-            alert('السحاب محدث بالفعل، لا يوجد أصناف جديدة لدمجها.');
+        if (newItems.length === 0) {
+            alert('كل الأصناف المتاحة موجودة بالفعل في السحاب! لا حاجة للمزامنة.');
             return;
         }
 
-        if (confirm(`تم العثور على ${mergedCount} صنف جديد لدمجه مع أصنافك الحالية في السحاب. هل تريد الاستمرار؟`)) {
-            return db.ref('products').set(cloudProducts).then(() => {
-                alert(`✅ تم الدمج بنجاح! تم إضافة ${mergedCount} صنف دون المساس بأصنافك الجديدة.`);
+        let msg = `لقد وجدنا ${newItems.length} صنف غير موجودين في السحاب.`;
+        if (cloudProducts.length > 0) {
+            msg += `\nلديك بالفعل ${cloudProducts.length} صنف في السحاب حالياً. سيتم إضافة الأصناف الجديدة إليهم دون مسح الموجود.`;
+        }
+
+        if (confirm(msg)) {
+            const finalData = [...cloudProducts, ...newItems];
+            return db.ref('products').set(finalData).then(() => {
+                alert(`✅ تم الدمج بنجاح! الإجمالي الآن ${finalData.length} صنف في السحاب.`);
             });
         }
     }).catch(err => {
