@@ -232,23 +232,39 @@ function deleteProduct(id) {
 
 function syncWithFirebase() {
     const localProducts = localStorage.getItem('products');
-    let dataToSync = products; // Default from products.js
-
-    if (localProducts) {
-        const parsedLocal = JSON.parse(localProducts);
-        if (parsedLocal.length > 0) {
-            if (confirm(`لقد وجدنا ${parsedLocal.length} صنف مضافين مسبقاً في متصفحك. هل تريد رفعهم للسحاب؟ (نوصي بهذا حتى لا تضيع مجهودك).`)) {
-                dataToSync = parsedLocal;
-            }
-        }
-    } else {
-        if (!confirm('هل تريد رفع المنتجات الافتراضية إلى السحاب؟')) return;
-    }
+    const defaultProducts = products; // from products.js
     
-    db.ref('products').set(dataToSync).then(() => {
-        alert('تمت المزامنة بنجاح! كل أصنافك الآن موجودة على السحاب وآمنة.');
+    db.ref('products').once('value').then((snapshot) => {
+        let cloudProducts = snapshot.val() || [];
+        if (!Array.isArray(cloudProducts)) cloudProducts = Object.values(cloudProducts);
+        
+        let localData = [];
+        if (localProducts) localData = JSON.parse(localProducts);
+        
+        // Merge strategy: Add everything from local/default if ID doesn't exist in cloud
+        let mergedCount = 0;
+        const sourceData = localData.length > 0 ? localData : defaultProducts;
+
+        sourceData.forEach(item => {
+            const exists = cloudProducts.find(p => p.id === item.id);
+            if (!exists) {
+                cloudProducts.push(item);
+                mergedCount++;
+            }
+        });
+
+        if (mergedCount === 0) {
+            alert('السحاب محدث بالفعل، لا يوجد أصناف جديدة لدمجها.');
+            return;
+        }
+
+        if (confirm(`تم العثور على ${mergedCount} صنف جديد لدمجه مع أصنافك الحالية في السحاب. هل تريد الاستمرار؟`)) {
+            return db.ref('products').set(cloudProducts).then(() => {
+                alert(`✅ تم الدمج بنجاح! تم إضافة ${mergedCount} صنف دون المساس بأصنافك الجديدة.`);
+            });
+        }
     }).catch(err => {
-        alert('حدث خطأ أثناء المزامنة: ' + err.message);
+        alert('حدث خطأ: ' + err.message);
     });
 }
 
