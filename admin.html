@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تكم مطبخ داليا</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="icon" id="favicon" href="صور/بروفيل_جديد.jpg" type="image/jpeg">
+    <link rel="shortcut icon" href="صور/بروفيل_جديد.jpg" type="image/jpeg">
+    <style>
+        :root {
+            --primary: #c0392b;
+            --secondary: #2c3e50;
+            --light: #ecf0f1;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            margin: 0;
+            background: #f4f6f7;
+        }
+
+        /* Login Screen */
+        #login-screen {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--secondary);
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            width: 300px;
+            text-align: center;
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+            font-weight: bold;
+        }
+
+        /* Dashboard */
+        #dashboard {
+            display: none;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--secondary);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            padding: 20px;
+        }
+
+        .sidebar h2 {
+            margin-top: 0;
+        }
+
+        .nav-item {
+            padding: 15px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .content {
+            margin-right: 290px;
+            /* RTL sidebar width */
+            padding: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: right;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .action-btn {
+            padding: 5px 10px;
+            border-radius: 3px;
+            color: white;
+            margin-left: 5px;
+            cursor: pointer;
+            border: none;
+        }
+
+        .edit-btn {
+            background: #f39c12;
+        }
+
+        .delete-btn {
+            background: #c0392b;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Login -->
+    <div id="login-screen">
+        <div class="login-box">
+            <h2>تسجيل دخول المدير</h2>
+            <input type="text" id="username" placeholder="اسم المستخدم">
+            <input type="password" id="password" placeholder="كلمة المرور">
+            <button class="btn" onclick="login()">دخول</button>
+            <p style="margin-top: 15px; font-size: 0.85em;">
+                <a href="#" onclick="forgotPassword()" style="color: #7f8c8d; text-decoration: none;">نسيت كلمة المرور؟</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard">
+        <div class="sidebar">
+            <h2>مطبخ داليا</h2>
+            <div class="nav-item active" onclick="switchTab('products')">📦 المنتجات</div>
+            <div class="nav-item" onclick="switchTab('promos')">🏷️ أكواد الخصم</div>
+            <div class="nav-item" onclick="switchTab('settings')">🎨 الإعدادات</div>
+            <div class="nav-item" onclick="switchTab('visitors')">👥 سجل الزوار</div>
+            <a href="index.html" class="nav-item" style="text-decoration: none; color: inherit; display: block;">🏠 ذهاب
+                للموقع</a>
+            <div class="nav-item" onclick="logout()" style="margin-top: 50px; background: #c0392b;">تسجيل خروج</div>
+        </div>
+
+        <div class="content">
+            <!-- Products Tab -->
+            <div id="products-tab" class="tab-content active">
+                <div class="card">
+                    <h3 style="margin-top:0">إضافة / تعديل منتج</h3>
+                    <input type="hidden" id="edit-id">
+                    <div class="form-group">
+                        <label class="form-label">اسم المنتج</label>
+                        <input type="text" id="p-name" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">السعر</label>
+                        <input type="number" id="p-price" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-group-label" style="display: flex; align-items: center; gap: 10px;">
+                            <input type="checkbox" id="p-has-cooking" style="width: auto; margin: 0;">
+                            يسمح باختيار التسوية (مستوي/على التسوية)
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">سعر التسوية (يضاف للسعر الأصلي)</label>
+                        <input type="number" id="p-cooking-fee" class="form-input" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">الصورة (رابط أو من الجهاز)</label>
+                        <input type="text" id="p-image" class="form-input" placeholder="https://example.com/image.jpg">
+                        <div style="margin-top: 10px;">
+                            <label class="btn" style="display: inline-block; cursor: pointer; background: #34495e; font-size: 0.9em; padding: 5px 10px; width: auto;">
+                                📁 رفع صورة
+                                <input type="file" id="p-image-file" accept="image/*" style="display: none;" onchange="handleImageUpload(event, 'p-image')">
+                            </label>
+                            <span id="p-image-status" style="margin-right: 10px; color: #27ae60; font-size: 0.9em; display: none;">تم رفع الصورة بنجاح ✓</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">القسم</label>
+                        <select id="p-category" class="form-input">
+                            <option value="main">أطباق رئيسية</option>
+                            <option value="appetizer">مقبلات</option>
+                            <option value="dessert">حلو</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">الوصف</label>
+                        <textarea id="p-desc" class="form-input" rows="2"></textarea>
+                    </div>
+                    <button class="btn" onclick="saveProduct()" style="width: auto;">حفظ المنتج</button>
+                    <button class="btn" onclick="clearForm()" style="width: auto; background: #7f8c8d;">مسح</button>
+                    <button class="btn" onclick="syncWithFirebase()" style="width: auto; background: #27ae60; margin-right: 10px;">🔄 رفع المنتجات الافتراضية للسحاب</button>
+                </div>
+
+                <div class="card">
+                    <h3>قائمة المنتجات الحالية</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>صورة</th>
+                                <th>الاسم</th>
+                                <th>السعر</th>
+                                <th>القسم</th>
+                                <th>تحكم</th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-table">
+                            <!-- JS Generates this -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Promo Codes Tab -->
+            <div id="promos-tab" class="tab-content">
+                <div class="card">
+                    <h3 style="margin-top:0">إضافة كود خصم جديد</h3>
+                    <div class="form-group">
+                        <label class="form-label">الكود (مثال: SAVE10)</label>
+                        <input type="text" id="promo-code-input" class="form-input" style="text-transform: uppercase;">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">نسبة الخصم (0.10 = 10%)</label>
+                        <input type="number" id="promo-value-input" class="form-input" step="0.01" placeholder="0.10">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">تاريخ الانتهاء</label>
+                        <input type="date" id="promo-date-input" class="form-input">
+                    </div>
+                    <button class="btn" onclick="savePromo()" style="width: auto;">حفظ الكود</button>
+                </div>
+
+                <div class="card">
+                    <h3>أكواد الخصم الحالية</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>الكود</th>
+                                <th>الخصم</th>
+                                <th>الصلاحية</th>
+                                <th>تحكم</th>
+                            </tr>
+                        </thead>
+                        <tbody id="promos-table">
+                            <!-- JS Generates this -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings-tab" class="tab-content">
+                <div class="card">
+                    <h3 style="margin-top:0">إعدادات التصميم (Branding)</h3>
+                    <div class="form-group">
+                        <label class="form-label">اللون الرئيسي (Primary)</label>
+                        <input type="color" id="setting-primary" class="form-input" style="height: 50px;">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">اللون الثانوي (Secondary)</label>
+                        <input type="color" id="setting-secondary" class="form-input" style="height: 50px;">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">رابط صورة الخلفية (Hero)</label>
+                        <input type="text" id="setting-hero" class="form-input" placeholder="https://...">
+                        <div style="margin-top: 10px;">
+                            <label class="btn" style="display: inline-block; cursor: pointer; background: #34495e; font-size: 0.9em; padding: 5px 10px; width: auto;">
+                                📁 رفع صورة للخلفية
+                                <input type="file" accept="image/*" style="display: none;" onchange="handleImageUpload(event, 'setting-hero')">
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">رابط اللوجو</label>
+                        <input type="text" id="setting-logo" class="form-input" placeholder="https://... or images/logo.jpg">
+                        <div style="margin-top: 10px;">
+                            <label class="btn" style="display: inline-block; cursor: pointer; background: #34495e; font-size: 0.9em; padding: 5px 10px; width: auto;">
+                                📁 رفع اللوجو
+                                <input type="file" accept="image/*" style="display: none;" onchange="handleImageUpload(event, 'setting-logo')">
+                            </label>
+                        </div>
+                    </div>
+
+                        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
+
+                        <h3 style="margin-top:0">بيانات الدخول (Admin Account)</h3>
+                        <div class="form-group">
+                            <label class="form-label">اسم المستخدم الجديد</label>
+                            <input type="text" id="setting-user" class="form-input"
+                                placeholder="اتركه فارغاً للاحتفاظ بالحالي">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">كلمة المرور الجديدة</label>
+                            <input type="text" id="setting-pass" class="form-input"
+                                placeholder="اتركها فارغة للاحتفاظ بالحالية">
+                        </div>
+
+                        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
+
+                        <h3 style="margin-top:0">عن المطبخ (About Us)</h3>
+                        <div class="form-group">
+                            <label class="form-label">العنوان (Title)</label>
+                            <input type="text" id="setting-about-title" class="form-input"
+                                placeholder="حكاية مطبخ داليا">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">النص (Description)</label>
+                            <textarea id="setting-about-text" class="form-input" rows="4"
+                                placeholder="اكتب نبذة عن المطبخ..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">صورة القسم (Image URL)</label>
+                            <input type="text" id="setting-about-image" class="form-input" placeholder="https://...">
+                            <div style="margin-top: 10px;">
+                                <label class="btn" style="display: inline-block; cursor: pointer; background: #34495e; font-size: 0.9em; padding: 5px 10px; width: auto;">
+                                    📁 رفع صورة
+                                    <input type="file" accept="image/*" style="display: none;" onchange="handleImageUpload(event, 'setting-about-image')">
+                                </label>
+                            </div>
+                        </div>
+                        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
+
+                        <h3 style="margin-top:0">🚚 رسوم التوصيل</h3>
+                        <div class="form-group">
+                            <label class="form-label">مبلغ التوصيل للمنزل (ج.م)</label>
+                            <input type="number" id="setting-delivery-fee" class="form-input" placeholder="0" min="0">
+                            <small style="color: #777; display: block; margin-top: 5px;">هذا المبلغ يُضاف تلقائياً للفاتورة عند اختيار العميل "توصيل للمنزل". اتركه 0 لإلغاء رسوم التوصيل.</small>
+                        </div>
+
+                        <button class="btn" onclick="saveSettings()" style="width: auto;">حفظ الإعدادات</button>
+                        <button class="btn" onclick="resetSettings()" style="width: auto; background: #7f8c8d;">استعادة
+                            الافتراضي</button>
+                    </div>
+                </div>
+            </div> <!-- Close Settings Tab -->
+
+            <!-- Visitors Tab -->
+            <div id="visitors-tab" class="tab-content">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3>سجل الزوار (Leads)</h3>
+                        <button class="btn" onclick="exportVisitors()" style="width: auto; background: #27ae60;">تصدير
+                            Excel</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>الاسم</th>
+                                <th>رقم الهاتف</th>
+                                <th>العنوان</th>
+                                <th>تاريخ الانضمام</th>
+                                <th>آخر زيارة</th>
+                            </tr>
+                        </thead>
+                        <tbody id="visitors-table">
+                            <!-- JS Generates this -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Firebase SDKs -->
+        <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
+        <script src="firebase-config.js"></script>
+
+        <script src="products.js?v=2"></script> <!-- Load default data -->
+        <script src="admin.js?v=2"></script>
+</body>
+
+</html>

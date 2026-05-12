@@ -1,0 +1,9 @@
+# Ignore node_modules if any
+node_modules/
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore local config (optional, but good practice if you had secrets)
+# .env
