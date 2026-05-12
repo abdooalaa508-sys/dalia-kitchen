@@ -230,42 +230,48 @@ function deleteProduct(id) {
     });
 }
 
-function syncWithFirebase() {
-    console.log("بدء عملية المزامنة الآمنة...");
-    const localProducts = localStorage.getItem('products');
-    const defaultProducts = products;
+function safeAppendDefault() {
+    console.log("جاري تحديث ودمج المنيو...");
+    const defaultProducts = products; // From products.js
     
     db.ref('products').once('value').then((snapshot) => {
         let cloudProducts = snapshot.val() || [];
         if (!Array.isArray(cloudProducts)) cloudProducts = Object.values(cloudProducts);
         
-        console.log("الأصناف الموجودة في السحاب حالياً:", cloudProducts);
+        let updatedCount = 0;
+        let addedCount = 0;
 
-        const localData = localProducts ? JSON.parse(localProducts) : [];
-        const sourceData = localData.length > 0 ? localData : defaultProducts;
+        // Create a copy of cloud products to modify
+        let finalData = [...cloudProducts];
 
-        // Merge logic
-        const newItems = sourceData.filter(item => {
-            const exists = cloudProducts.find(p => p.id == item.id); // Use == for flexible type matching
-            return !exists;
+        defaultProducts.forEach(localItem => {
+            const index = finalData.findIndex(p => p.id == localItem.id);
+            if (index > -1) {
+                // Update existing: Check if anything changed
+                const cloudItem = finalData[index];
+                if (JSON.stringify(cloudItem) !== JSON.stringify(localItem)) {
+                    finalData[index] = { ...cloudItem, ...localItem };
+                    updatedCount++;
+                }
+            } else {
+                // Add new
+                finalData.push(localItem);
+                addedCount++;
+            }
         });
 
-        console.log("الأصناف الجديدة التي سيتم إضافتها:", newItems);
-
-        if (newItems.length === 0) {
-            alert('السحاب يحتوي بالفعل على كل الأصناف. لا يوجد شيء لإضافته.');
+        if (updatedCount === 0 && addedCount === 0) {
+            alert('المنيو أونلاين متطابق تماماً مع الملف. لا يوجد تحديثات.');
             return;
         }
 
-        if (confirm(`سيتم إضافة ${newItems.length} صنف إلى أصنافك الحالية (${cloudProducts.length}). هل تريد الاستمرار؟`)) {
-            const finalData = [...cloudProducts, ...newItems];
+        if (confirm(`سيتم إضافة ${addedCount} صنف جديد وتحديث ${updatedCount} صنف موجود. لن يتم مسح أي أصناف أضفتها يدوياً. هل تريد الاستمرار؟`)) {
             return db.ref('products').set(finalData).then(() => {
-                alert(`✅ تم الدمج بنجاح! الإجمالي الآن ${finalData.length} صنف.`);
+                alert(`✅ تم التحديث بنجاح! تم إضافة ${addedCount} وتحديث ${updatedCount} صنف.`);
             });
         }
     }).catch(err => {
-        console.error(err);
-        alert('حدث خطأ: ' + err.message);
+        alert('حدث خطأ أثناء التحديث: ' + err.message);
     });
 }
 
