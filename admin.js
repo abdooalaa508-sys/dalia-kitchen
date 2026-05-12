@@ -104,10 +104,18 @@ function getProducts() {
 }
 
 function loadProducts() {
+    console.log("جاري جلب المنتجات من Firebase...");
     db.ref('products').on('value', (snapshot) => {
         const items = snapshot.val() || [];
+        console.log("تم استلام المنتجات:", items);
         const tbody = document.getElementById('products-table');
         if (!tbody) return;
+        
+        if (items.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">لا يوجد منتجات في السحاب حالياً. اضغط على زر المزامنة أو أضف منتج جديد.</td></tr>';
+            return;
+        }
+
         tbody.innerHTML = items.map(p => `
             <tr>
                 <td><img src="${p.image}" width="50" style="border-radius:5px"></td>
@@ -133,10 +141,22 @@ function saveProduct() {
     const category = document.getElementById('p-category').value;
     const desc = document.getElementById('p-desc').value;
 
-    if (!name || !price) return alert('البيانات ناقصة');
+    if (!name || !price) return alert('البيانات ناقصة (الاسم والسعر مطلوبين)');
+
+    // Show loading state (optional but good)
+    const saveBtn = document.querySelector('button[onclick="saveProduct()"]');
+    const originalText = saveBtn.textContent;
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'جاري الحفظ...';
 
     db.ref('products').once('value').then((snapshot) => {
-        let items = snapshot.val() || [];
+        let items = snapshot.val();
+        // Convert to array if it's an object (Firebase sometimes does this)
+        if (items && !Array.isArray(items)) {
+            items = Object.values(items);
+        }
+        items = items || [];
+
         if (id) {
             // Edit
             const index = items.findIndex(p => p.id == id);
@@ -166,9 +186,17 @@ function saveProduct() {
                 description: desc
             });
         }
-        db.ref('products').set(items);
-        alert('تم الحفظ بنجاح');
+
+        return db.ref('products').set(items);
+    }).then(() => {
+        alert('✅ تم الحفظ بنجاح في السحاب!');
         clearForm();
+    }).catch(err => {
+        console.error(err);
+        alert('❌ فشل الحفظ! تأكد من إعدادات Firebase: ' + err.message);
+    }).finally(() => {
+        saveBtn.disabled = false;
+        saveBtn.textContent = originalText;
     });
 }
 
