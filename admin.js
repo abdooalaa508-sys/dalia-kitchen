@@ -231,6 +231,7 @@ function deleteProduct(id) {
 }
 
 function syncWithFirebase() {
+    console.log("بدء عملية المزامنة الآمنة...");
     const localProducts = localStorage.getItem('products');
     const defaultProducts = products;
     
@@ -238,29 +239,32 @@ function syncWithFirebase() {
         let cloudProducts = snapshot.val() || [];
         if (!Array.isArray(cloudProducts)) cloudProducts = Object.values(cloudProducts);
         
+        console.log("الأصناف الموجودة في السحاب حالياً:", cloudProducts);
+
         const localData = localProducts ? JSON.parse(localProducts) : [];
         const sourceData = localData.length > 0 ? localData : defaultProducts;
 
-        // Count how many are actually new
-        const newItems = sourceData.filter(item => !cloudProducts.find(p => p.id === item.id));
+        // Merge logic
+        const newItems = sourceData.filter(item => {
+            const exists = cloudProducts.find(p => p.id == item.id); // Use == for flexible type matching
+            return !exists;
+        });
+
+        console.log("الأصناف الجديدة التي سيتم إضافتها:", newItems);
 
         if (newItems.length === 0) {
-            alert('كل الأصناف المتاحة موجودة بالفعل في السحاب! لا حاجة للمزامنة.');
+            alert('السحاب يحتوي بالفعل على كل الأصناف. لا يوجد شيء لإضافته.');
             return;
         }
 
-        let msg = `لقد وجدنا ${newItems.length} صنف غير موجودين في السحاب.`;
-        if (cloudProducts.length > 0) {
-            msg += `\nلديك بالفعل ${cloudProducts.length} صنف في السحاب حالياً. سيتم إضافة الأصناف الجديدة إليهم دون مسح الموجود.`;
-        }
-
-        if (confirm(msg)) {
+        if (confirm(`سيتم إضافة ${newItems.length} صنف إلى أصنافك الحالية (${cloudProducts.length}). هل تريد الاستمرار؟`)) {
             const finalData = [...cloudProducts, ...newItems];
             return db.ref('products').set(finalData).then(() => {
-                alert(`✅ تم الدمج بنجاح! الإجمالي الآن ${finalData.length} صنف في السحاب.`);
+                alert(`✅ تم الدمج بنجاح! الإجمالي الآن ${finalData.length} صنف.`);
             });
         }
     }).catch(err => {
+        console.error(err);
         alert('حدث خطأ: ' + err.message);
     });
 }
